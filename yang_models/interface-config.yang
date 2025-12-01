@@ -1,0 +1,257 @@
+module interface-config {
+  yang-version 1.1;
+  namespace "http://example.com/ns/interface-config";
+  prefix "ifcfg";
+
+  organization "Group Saisys";
+  contact "network-automation@saisys.com";
+  description
+    "YANG data model for network interface configuration management.
+     This model allows automated configuration of interface descriptions,
+     IP addresses, and other critical parameters.";
+
+  revision 2024-12-01 {
+    description "Initial version for DEVASC Network Automation.";
+    reference "RFC 6020, RFC 7950";
+  }
+
+  /* Configuration Data Hierarchy */
+  container interfaces {
+    description "Interface configuration container";
+    presence "Interfaces container";
+
+    list interface {
+      key "name";
+      description "List of network interfaces";
+
+      leaf name {
+        type string;
+        description "Interface name (e.g., GigabitEthernet0/0/0)";
+      }
+
+      leaf description {
+        type string;
+        description "Interface description/label for operational clarity";
+      }
+
+      leaf enabled {
+        type boolean;
+        default "true";
+        description "Enable or disable the interface";
+      }
+
+      leaf mtu {
+        type uint16 {
+          range "68 .. 65535";
+        }
+        default "1500";
+        description "Maximum Transmission Unit size in bytes";
+      }
+
+      container ipv4 {
+        description "IPv4 address configuration";
+        presence "IPv4 configuration";
+
+        leaf address {
+          type string;
+          description "IPv4 address in dotted decimal notation";
+        }
+
+        leaf netmask {
+          type string;
+          description "IPv4 netmask in dotted decimal notation";
+        }
+      }
+
+      container ipv6 {
+        description "IPv6 address configuration";
+        presence "IPv6 configuration";
+
+        leaf address {
+          type string;
+          description "IPv6 address in standard notation";
+        }
+
+        leaf prefix-length {
+          type uint8 {
+            range "1 .. 128";
+          }
+          description "IPv6 prefix length";
+        }
+      }
+
+      leaf bandwidth {
+        type uint32;
+        units "kbps";
+        description "Interface bandwidth in kilobits per second";
+      }
+
+      leaf duplex {
+        type enumeration {
+          enum "auto" {
+            description "Auto-negotiation";
+          }
+          enum "full" {
+            description "Full duplex";
+          }
+          enum "half" {
+            description "Half duplex";
+          }
+        }
+        default "auto";
+        description "Duplex mode configuration";
+      }
+
+      leaf speed {
+        type enumeration {
+          enum "auto" {
+            description "Auto-negotiation";
+          }
+          enum "10" {
+            description "10 Mbps";
+          }
+          enum "100" {
+            description "100 Mbps";
+          }
+          enum "1000" {
+            description "1000 Mbps (1 Gbps)";
+          }
+          enum "10000" {
+            description "10000 Mbps (10 Gbps)";
+          }
+        }
+        default "auto";
+        description "Interface speed setting";
+      }
+
+      container statistics {
+        config false;
+        description "Interface statistics (read-only)";
+
+        leaf packets-in {
+          type uint64;
+          description "Number of packets received";
+        }
+
+        leaf packets-out {
+          type uint64;
+          description "Number of packets transmitted";
+        }
+
+        leaf bytes-in {
+          type uint64;
+          description "Number of bytes received";
+        }
+
+        leaf bytes-out {
+          type uint64;
+          description "Number of bytes transmitted";
+        }
+
+        leaf errors {
+          type uint64;
+          description "Number of errors detected";
+        }
+      }
+    }
+  }
+
+  /* Operational State Data */
+  container interfaces-state {
+    config false;
+    description "Interface operational state (read-only)";
+
+    list interface {
+      key "name";
+      description "List of interface states";
+
+      leaf name {
+        type string;
+        description "Interface name";
+      }
+
+      leaf oper-status {
+        type enumeration {
+          enum "up" {
+            description "Interface is operational";
+          }
+          enum "down" {
+            description "Interface is not operational";
+          }
+          enum "testing" {
+            description "Interface is in test mode";
+          }
+        }
+        description "Operational status of the interface";
+      }
+
+      leaf admin-status {
+        type enumeration {
+          enum "up" {
+            description "Administrative up";
+          }
+          enum "down" {
+            description "Administrative down";
+          }
+          enum "testing" {
+            description "Testing mode";
+          }
+        }
+        description "Administrative status of the interface";
+      }
+
+      leaf last-change {
+        type string;
+        description "Timestamp of last status change";
+      }
+    }
+  }
+
+  /* RPC Operations */
+  rpc reset-interface {
+    description "Reset interface to default configuration";
+    input {
+      leaf interface-name {
+        type string;
+        mandatory true;
+        description "Name of interface to reset";
+      }
+    }
+    output {
+      leaf status {
+        type string;
+        description "Operation status message";
+      }
+    }
+  }
+
+  rpc get-interface-stats {
+    description "Get detailed interface statistics";
+    input {
+      leaf interface-name {
+        type string;
+        mandatory true;
+        description "Name of interface";
+      }
+    }
+    output {
+      container statistics {
+        leaf packets-in {
+          type uint64;
+        }
+        leaf packets-out {
+          type uint64;
+        }
+        leaf bytes-in {
+          type uint64;
+        }
+        leaf bytes-out {
+          type uint64;
+        }
+        leaf errors {
+          type uint64;
+        }
+      }
+    }
+  }
+}
